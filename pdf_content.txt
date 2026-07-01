@@ -1,0 +1,178 @@
+﻿Pages: 7
+--- PAGE 1 ---
+ 
+ 
+ 
+ 
+COS 202ΓÇï
+ 
+Smart library circulation & Automation  System    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+--- PAGE 2 ---
+PROJECT OVERVIEW 
+A university library wants a Smart Library Circulation & Automation System (SLCAS) 
+that manages books, users, borrowing/returning workflows, automated reminders, 
+and interactive GUI dashboards.ΓÇï
+You are required to build a fully functional system demonstrating advanced 
+object-oriented design, efficient data structures, sorting/searching algorithms, 
+recursion, and GUI programming with event-driven logic. 
+CORE REQUIREMENTS 
+1. Advanced Object-Oriented Programming (OOP) 
+Students must design a class hierarchy with: 
+ΓùÅΓÇï Abstract class LibraryItem 
+ΓùÅΓÇï Subclasses: Book, Magazine, Journal 
+ΓùÅΓÇï Interface: Borrowable 
+ΓùÅΓÇï Polymorphism: 
+oΓÇï A function that processes any LibraryItem type 
+ΓùÅΓÇï Encapsulation & Composition: 
+oΓÇï LibraryDatabase containing collections of items 
+oΓÇï UserAccount class with borrowing history 
+ΓùÅΓÇï Class Organization: Use multiple packages/modules 
+2. Class Hierarchies & Program Organisation 
+Project must be structured as: 
+/model 
+   LibraryItem.java 
+   Book.java 
+   ... 
+/controller 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       2 
+
+--- PAGE 3 ---
+   LibraryManager.java 
+   SearchEngine.java 
+   BorrowController.java 
+/gui 
+   MainWindow.java 
+   BorrowPanel.java 
+   AdminPanel.java 
+/utils 
+   IDGenerator.java 
+   FileHandler.java 
+3. Using APIs: Arrays, Lists, Queues, Stacks 
+System must use: 
+ΓùÅΓÇï ArrayList to store library items 
+ΓùÅΓÇï Queue for reservation/waitlist for borrowed books 
+ΓùÅΓÇï Stack for undoing last admin operation (e.g., deletion) 
+ΓùÅΓÇï Array to implement a quick fixed-size cache for ΓÇ£Most Frequently Accessed 
+ItemsΓÇ¥ 
+4. Search Algorithms (Student-implemented) 
+Implement at least two: 
+1.ΓÇï Linear search 
+2.ΓÇï Binary search 
+3.ΓÇï Recursive search (title or author) 
+Use the appropriate one depending on sorting state. 
+5. Sorting Algorithms (Student-implemented) 
+Implement at least two: 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       3 
+
+--- PAGE 4 ---
+1.ΓÇï Selection Sort 
+2.ΓÇï Insertion Sort 
+3.ΓÇï Merge Sort (recommended) 
+4.ΓÇï Quick Sort 
+Students choose which to use when sorting: 
+ΓùÅΓÇï by title 
+ΓùÅΓÇï by author 
+ΓùÅΓÇï by year 
+Include a GUI dropdown to pick algorithm. 
+6. Recursive Algorithm 
+At least one recursive component, e.g.: 
+1.ΓÇï Recursive search in the library catalogue 
+2.ΓÇï Recursively compute total resource count by category 
+3.ΓÇï Recursive menu refresh (console fallback) 
+4.ΓÇï Recursive overdue charge computation 
+7. Event-Driven Programming 
+GUI must respond to events such as: 
+ΓùÅΓÇï Button clicks 
+ΓùÅΓÇï Menu selections 
+ΓùÅΓÇï Text field updates 
+ΓùÅΓÇï Timer-triggered overdue reminders 
+Use listeners/handlers. 
+8. GUI Programming + Components + Layout Management 
+Students must create: 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       4 
+
+--- PAGE 5 ---
+Γ¥ûΓÇïMain window 
+Γ¥ûΓÇïTabbed panels: 
+oΓÇï View Items 
+oΓÇï Borrow/Return 
+oΓÇï Admin 
+oΓÇï Search & Sort 
+GUI must include: 
+1.ΓÇï Tables or list views 
+2.ΓÇï Buttons (Add, Borrow, Return, Sort) 
+3.ΓÇï Text fields 
+4.ΓÇï Combo boxes 
+5.ΓÇï Labels 
+6.ΓÇï Dialog boxes 
+7.ΓÇï Status bar 
+Layouts: 
+1.ΓÇï BorderLayout 
+2.ΓÇï GridBagLayout or BoxLayout (encouraged) 
+3.ΓÇï CardLayout (for switching screens) 
+9. Advanced GUI Techniques 
+At least two of: 
+1.0ΓÇïCustom renderers for list/table items 
+2.0ΓÇïDynamic components (adding/removing fields at runtime) 
+3.0ΓÇïFile chooser dialog for import/export 
+4.0ΓÇïTimers for overdue notifications 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       5 
+
+--- PAGE 6 ---
+5.0ΓÇïInput validation with dialog popups 
+6.0ΓÇïKeyboard shortcuts / mnemonics 
+7.0ΓÇïTooltips 
+10. GUI Application & Program Development 
+Final system must be: 
+1.ΓÇï Interactive 
+2.ΓÇï Robust 
+3.ΓÇï Error-tolerant (try/catch for invalid data) 
+4.ΓÇï Persistent (data saved & loaded using text/JSON files) 
+MANDATORY SYSTEM FEATURES 
+Γ£ö Add new library items 
+Γ£ö Borrow and return items 
+Γ£ö Maintain reservation queue 
+Γ£ö Search items by title, author, or type 
+Γ£ö Sort using selectable algorithms 
+Γ£ö Undo last admin action (Stack) 
+Γ£ö GUI dashboard with multiple panels 
+Γ£ö Save & load data from files 
+Γ£ö Generate simple reports: 
+1.ΓÇï Most borrowed items 
+2.ΓÇï Users with overdue items 
+3.ΓÇï Category distribution 
+SUBMISSION REQUIREMENTS 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       6 
+
+--- PAGE 7 ---
+Students must submit: 
+ΓùÅΓÇï Source code folder 
+ΓùÅΓÇï Screenshots of GUI 
+ΓùÅΓÇï A diagram showing class hierarchy (UML encouraged) 
+ΓùÅΓÇï A 2ΓÇô3 page report including: 
+oΓÇï Description 
+oΓÇï Features 
+oΓÇï Data structures used 
+oΓÇï Algorithms chosen and why 
+oΓÇï Challenges faced 
+ 
+ 
+ 
+ 
+┬⌐ Copyright 2025 MIVA Open University  All Rights Reserved  |       7 
+

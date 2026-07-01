@@ -1,0 +1,19 @@
+{
+  "users": [
+    { "userId": "STUDENT_B", "name": "Student B", "email": "student@miva.edu.ng", "borrowHistory": ["B-1001A"], "activeLoans": ["B-1001A"], "loanDates": [1782899857172] }
+  ],
+  "catalogue": [
+    { "id": "B-1003", "type": "Book", "title": "Haunting Adeline", "author": "H.D. Carlton", "year": 2021, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "ISBN-111", "extra2": "Dark Romance" },
+    { "id": "M-1002A", "type": "Magazine", "title": "Dark Devotion", "author": "Romance Weekly", "year": 2023, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "Iss-1", "extra2": "Gothic Press" },
+    { "id": "M-1002B", "type": "Magazine", "title": "Shadowed Hearts", "author": "Dark Fiction Monthly", "year": 2022, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "Iss-2", "extra2": "Obsidian Media" },
+    { "id": "B-1001A", "type": "Book", "title": "Den of Vipers", "author": "K.A. Knight", "year": 2020, "available": false, "borrowedBy": "STUDENT_B", "borrowCount": 1, "extra1": "ISBN-222", "extra2": "Dark Romance" },
+    { "id": "J-1003", "type": "Journal", "title": "Tropes in Dark Romance", "author": "Dr. A. Black", "year": 2021, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "Vol 1", "extra2": "DOI-1" },
+    { "id": "M-1002C", "type": "Magazine", "title": "Crimson Desire", "author": "Vampire Press", "year": 2024, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "Iss-3", "extra2": "Bloodline Pub" },
+    { "id": "B-1001B", "type": "Book", "title": "Credence", "author": "Penelope Douglas", "year": 2020, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "ISBN-333", "extra2": "Dark Romance" },
+    { "id": "B-1001C", "type": "Book", "title": "Tears of Tess", "author": "Pepper Winters", "year": 2013, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "ISBN-444", "extra2": "Dark Romance" },
+    { "id": "J-1001", "type": "Journal", "title": "Psychology of the Morally Grey", "author": "Dr. S. Vance", "year": 2023, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "Vol 2", "extra2": "DOI-2" },
+    { "id": "B-1001D", "type": "Book", "title": "Corrupt", "author": "Penelope Douglas", "year": 2015, "available": true, "borrowedBy": "", "borrowCount": 0, "extra1": "ISBN-555", "extra2": "Dark Romance" }
+  ],
+  "waitlists": [
+  ]
+}
