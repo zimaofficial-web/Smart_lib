@@ -1,0 +1,841 @@
+\n### src_v2\Main.java\n```java\nimport controller.TravelLibrarySystem;
+import gui.MainDashboard;
+import model.TravelGuide;
+import model.TravelMagazine;
+import model.TravelMap;
+import model.Traveler;
+import utils.IdGenerator;
+
+import javax.swing.*;
+
+public class Main {
+    public static void main(String[] args) {
+        
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        TravelLibrarySystem system = new TravelLibrarySystem();
+        
+        // Seed some initial data
+        system.addResource(new TravelGuide(IdGenerator.generateResourceId(), "Europe on a Shoestring", "Lonely Planet", 2023, "Europe", "Budget Travelers"));
+        system.addResource(new TravelMap(IdGenerator.generateResourceId(), "Tokyo Metro Map", "Tokyo Gov", 2024, "Tokyo, Japan", "1:10000"));
+        system.addResource(new TravelMagazine(IdGenerator.generateResourceId(), "National Geographic Traveler", "NatGeo", 2023, "October", "Wildlife Safaris"));
+        
+        system.getTravelers().add(new Traveler(IdGenerator.generateTravelerId(), "Alice Smith", "alice@example.com"));
+        system.getTravelers().add(new Traveler(IdGenerator.generateTravelerId(), "Bob Jones", "bob@example.com"));
+
+        SwingUtilities.invokeLater(() -> {
+            MainDashboard dashboard = new MainDashboard(system);
+            dashboard.setVisible(true);
+        });
+    }
+}
+\n```\n\n### src_v2\controller\TravelLibrarySystem.java\n```java\npackage controller;
+
+import model.TravelResource;
+import model.Traveler;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+
+/**
+ * Core controller managing the inventory and operations for the travel library.
+ */
+public class TravelLibrarySystem {
+    private List<TravelResource> inventory;
+    private List<Traveler> travelers;
+    
+    // Requirement: Array for caching recently accessed items
+    private TravelResource[] accessCache;
+    private int cacheCapacity = 10;
+    
+    // Requirement: Stack for undo
+    private Stack<UndoCommand> commandHistory;
+
+    public TravelLibrarySystem() {
+        this.inventory = new ArrayList<>();
+        this.travelers = new ArrayList<>();
+        this.accessCache = new TravelResource[cacheCapacity];
+        this.commandHistory = new Stack<>();
+    }
+
+    public List<TravelResource> getInventory() { return inventory; }
+    public void setInventory(List<TravelResource> inventory) { this.inventory = inventory; }
+    
+    public List<Traveler> getTravelers() { return travelers; }
+    public void setTravelers(List<Traveler> travelers) { this.travelers = travelers; }
+
+    public TravelResource getResourceById(String id) {
+        for (TravelResource res : inventory) {
+            if (res.getId().equals(id)) {
+                updateCache(res);
+                return res;
+            }
+        }
+        return null;
+    }
+
+    public Traveler getTravelerById(String id) {
+        for (Traveler t : travelers) {
+            if (t.getTravelerId().equals(id)) return t;
+        }
+        return null;
+    }
+
+    public void addResource(TravelResource resource) {
+        inventory.add(resource);
+        commandHistory.push(new UndoCommand(UndoCommand.CommandType.ADD_RESOURCE, resource));
+    }
+
+    public void removeResource(String resourceId) {
+        TravelResource resource = getResourceById(resourceId);
+        if (resource != null) {
+            inventory.remove(resource);
+            commandHistory.push(new UndoCommand(UndoCommand.CommandType.REMOVE_RESOURCE, resource));
+        }
+    }
+
+    public String undoLastCommand() {
+        if (commandHistory.isEmpty()) {
+            return "No actions to undo.";
+        }
+        UndoCommand lastCommand = commandHistory.pop();
+        if (lastCommand.getType() == UndoCommand.CommandType.ADD_RESOURCE) {
+            inventory.remove(lastCommand.getResource());
+            return "Undid Add: Removed " + lastCommand.getResource().getTitle();
+        } else if (lastCommand.getType() == UndoCommand.CommandType.REMOVE_RESOURCE) {
+            inventory.add(lastCommand.getResource());
+            return "Undid Remove: Restored " + lastCommand.getResource().getTitle();
+        }
+        return "Unknown command.";
+    }
+
+    private void updateCache(TravelResource resource) {
+        int foundIndex = -1;
+        for (int i = 0; i < accessCache.length; i++) {
+            if (accessCache[i] != null && accessCache[i].getId().equals(resource.getId())) {
+                foundIndex = i;
+                break;
+            }
+        }
+        
+        if (foundIndex != -1) {
+             for (int i = foundIndex; i > 0; i--) {
+                 accessCache[i] = accessCache[i-1];
+             }
+        } else {
+             for (int i = accessCache.length - 1; i > 0; i--) {
+                 accessCache[i] = accessCache[i-1];
+             }
+        }
+        accessCache[0] = resource;
+    }
+
+    public TravelResource[] getAccessCache() {
+        return accessCache;
+    }
+
+    // Recursion requirement 1: Compute total resource count by category recursively
+    public int tallyResourcesByCategory(String category) {
+        return countCategoryRecursive(category, 0);
+    }
+
+    private int countCategoryRecursive(String category, int index) {
+        if (index >= inventory.size()) return 0;
+        int count = inventory.get(index).getResourceType().equalsIgnoreCase(category) ? 1 : 0;
+        return count + countCategoryRecursive(category, index + 1);
+    }
+
+    // Recursion requirement 2: Recursive late fee computation ($1.50 per day for travel resources)
+    public double computeLateFeesRecursive(int daysLate) {
+        if (daysLate <= 0) return 0;
+        return 1.50 + computeLateFeesRecursive(daysLate - 1);
+    }
+}
+\n```\n\n### src_v2\controller\UndoCommand.java\n```java\npackage controller;
+
+import model.TravelResource;
+
+public class UndoCommand {
+    public enum CommandType {
+        ADD_RESOURCE,
+        REMOVE_RESOURCE
+    }
+
+    private CommandType type;
+    private TravelResource resource;
+
+    public UndoCommand(CommandType type, TravelResource resource) {
+        this.type = type;
+        this.resource = resource;
+    }
+
+    public CommandType getType() {
+        return type;
+    }
+
+    public TravelResource getResource() {
+        return resource;
+    }
+}
+\n```\n\n### src_v2\gui\InventoryPanel.java\n```java\npackage gui;
+
+import controller.TravelLibrarySystem;
+import model.*;
+import utils.IdGenerator;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import java.awt.*;
+import java.util.List;
+
+public class InventoryPanel extends JPanel {
+    private TravelLibrarySystem system;
+    private JTable table;
+    private InventoryTableModel tableModel;
+
+    public InventoryPanel(TravelLibrarySystem system) {
+        this.system = system;
+        setLayout(new BorderLayout());
+        
+        // Top toolbar
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnAdd = new JButton("Add Resource");
+        JButton btnRemove = new JButton("Remove Selected");
+        JButton btnUndo = new JButton("Undo Last Action");
+        
+        toolbar.add(btnAdd);
+        toolbar.add(btnRemove);
+        toolbar.add(btnUndo);
+        
+        add(toolbar, BorderLayout.NORTH);
+        
+        // Table
+        tableModel = new InventoryTableModel(system.getInventory());
+        table = new JTable(tableModel);
+        add(new JScrollPane(table), BorderLayout.CENTER);
+        
+        // Actions
+        btnAdd.addActionListener(e -> showAddDialog());
+        btnRemove.addActionListener(e -> removeSelected());
+        btnUndo.addActionListener(e -> {
+            String msg = system.undoLastCommand();
+            JOptionPane.showMessageDialog(this, msg);
+            refresh();
+        });
+    }
+    
+    private void showAddDialog() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Resource", true);
+        dialog.setLayout(new GridLayout(7, 2, 10, 10));
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+        
+        String[] types = {"Travel Guide", "Travel Map", "Travel Magazine"};
+        JComboBox<String> cbType = new JComboBox<>(types);
+        
+        JTextField txtTitle = new JTextField();
+        JTextField txtCreator = new JTextField();
+        JTextField txtYear = new JTextField();
+        JTextField txtE1 = new JTextField();
+        JTextField txtE2 = new JTextField();
+        
+        dialog.add(new JLabel("Type:")); dialog.add(cbType);
+        dialog.add(new JLabel("Title:")); dialog.add(txtTitle);
+        dialog.add(new JLabel("Creator/Author:")); dialog.add(txtCreator);
+        dialog.add(new JLabel("Year:")); dialog.add(txtYear);
+        
+        JLabel lblE1 = new JLabel("Country/Region:");
+        JLabel lblE2 = new JLabel("Audience:");
+        dialog.add(lblE1); dialog.add(txtE1);
+        dialog.add(lblE2); dialog.add(txtE2);
+        
+        cbType.addActionListener(e -> {
+            int idx = cbType.getSelectedIndex();
+            if (idx == 0) { lblE1.setText("Country/Region:"); lblE2.setText("Audience:"); }
+            else if (idx == 1) { lblE1.setText("Region:"); lblE2.setText("Scale:"); }
+            else if (idx == 2) { lblE1.setText("Issue Month:"); lblE2.setText("Topic:"); }
+        });
+        
+        JButton btnSave = new JButton("Save");
+        btnSave.addActionListener(e -> {
+            try {
+                String title = txtTitle.getText();
+                String creator = txtCreator.getText();
+                int year = Integer.parseInt(txtYear.getText());
+                String e1 = txtE1.getText();
+                String e2 = txtE2.getText();
+                String id = IdGenerator.generateResourceId();
+                
+                TravelResource res = null;
+                switch (cbType.getSelectedIndex()) {
+                    case 0: res = new TravelGuide(id, title, creator, year, e1, e2); break;
+                    case 1: res = new TravelMap(id, title, creator, year, e1, e2); break;
+                    case 2: res = new TravelMagazine(id, title, creator, year, e1, e2); break;
+                }
+                
+                system.addResource(res);
+                refresh();
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Invalid input. Check year.");
+            }
+        });
+        
+        dialog.add(new JLabel()); dialog.add(btnSave);
+        dialog.setVisible(true);
+    }
+    
+    private void removeSelected() {
+        int row = table.getSelectedRow();
+        if (row >= 0) {
+            String id = (String) tableModel.getValueAt(row, 0);
+            system.removeResource(id);
+            refresh();
+        } else {
+            JOptionPane.showMessageDialog(this, "Select a row to remove.");
+        }
+    }
+
+    public void refresh() {
+        tableModel.fireTableDataChanged();
+    }
+
+    // Inner class for Table Model
+    class InventoryTableModel extends AbstractTableModel {
+        private String[] columns = {"ID", "Type", "Title", "Creator", "Year", "Availability", "Extra Info"};
+        private List<TravelResource> list;
+
+        public InventoryTableModel(List<TravelResource> list) { this.list = list; }
+
+        @Override public int getRowCount() { return list.size(); }
+        @Override public int getColumnCount() { return columns.length; }
+        @Override public String getColumnName(int col) { return columns[col]; }
+
+        @Override
+        public Object getValueAt(int row, int col) {
+            TravelResource res = list.get(row);
+            switch (col) {
+                case 0: return res.getId();
+                case 1: return res.getResourceType();
+                case 2: return res.getTitle();
+                case 3: return res.getCreator();
+                case 4: return res.getPublicationYear();
+                case 5: return res.isAvailable() ? "Available" : "Rented";
+                case 6: return res.getExtraLabel1() + ": " + res.getExtraAttribute1() + " | " + 
+                               res.getExtraLabel2() + ": " + res.getExtraAttribute2();
+                default: return null;
+            }
+        }
+    }
+}
+\n```\n\n### src_v2\gui\MainDashboard.java\n```java\npackage gui;
+
+import controller.TravelLibrarySystem;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainDashboard extends JFrame {
+    
+    private TravelLibrarySystem system;
+    private CardLayout cardLayout;
+    private JPanel mainContentPanel;
+    
+    // Panels
+    private InventoryPanel inventoryPanel;
+    private RentalsPanel rentalsPanel;
+    private OverviewPanel overviewPanel;
+
+    public MainDashboard(TravelLibrarySystem system) {
+        this.system = system;
+        
+        setTitle("Tina's Library");
+        setSize(1000, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        
+        initUI();
+    }
+    
+    private void initUI() {
+        setLayout(new BorderLayout());
+        
+        // Side Navigation Panel
+        JPanel sideNav = new JPanel();
+        sideNav.setLayout(new BoxLayout(sideNav, BoxLayout.Y_AXIS));
+        sideNav.setBackground(new Color(44, 62, 80)); // Dark Blue-Gray
+        sideNav.setPreferredSize(new Dimension(200, getHeight()));
+        
+        JLabel brandLabel = new JLabel("Tina's Library");
+        brandLabel.setFont(new Font("SansSerif", Font.BOLD, 22));
+        brandLabel.setForeground(Color.WHITE);
+        brandLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        brandLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 5, 10));
+        sideNav.add(brandLabel);
+        
+        JLabel subtitleLabel = new JLabel("Smart Library System");
+        subtitleLabel.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        subtitleLabel.setForeground(new Color(189, 195, 199));
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 30, 10));
+        sideNav.add(subtitleLabel);
+        
+        // Navigation Buttons
+        JButton btnOverview = createNavButton("Overview");
+        JButton btnInventory = createNavButton("Inventory");
+        JButton btnRentals = createNavButton("Rentals");
+        
+        sideNav.add(btnOverview);
+        sideNav.add(Box.createRigidArea(new Dimension(0, 5)));
+        sideNav.add(btnInventory);
+        sideNav.add(Box.createRigidArea(new Dimension(0, 5)));
+        sideNav.add(btnRentals);
+        
+        // Main Content Area with CardLayout
+        cardLayout = new CardLayout();
+        mainContentPanel = new JPanel(cardLayout);
+        
+        overviewPanel = new OverviewPanel(system);
+        inventoryPanel = new InventoryPanel(system);
+        rentalsPanel = new RentalsPanel(system, this);
+        
+        mainContentPanel.add(overviewPanel, "Overview");
+        mainContentPanel.add(inventoryPanel, "Inventory");
+        mainContentPanel.add(rentalsPanel, "Rentals");
+        
+        // Actions
+        btnOverview.addActionListener(e -> {
+            overviewPanel.refresh();
+            cardLayout.show(mainContentPanel, "Overview");
+        });
+        btnInventory.addActionListener(e -> {
+            inventoryPanel.refresh();
+            cardLayout.show(mainContentPanel, "Inventory");
+        });
+        btnRentals.addActionListener(e -> {
+            rentalsPanel.refresh();
+            cardLayout.show(mainContentPanel, "Rentals");
+        });
+        
+        add(sideNav, BorderLayout.WEST);
+        add(mainContentPanel, BorderLayout.CENTER);
+    }
+    
+    private JButton createNavButton(String text) {
+        JButton btn = new JButton(text);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setFocusPainted(false);
+        btn.setBackground(new Color(52, 73, 94));
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        return btn;
+    }
+}
+\n```\n\n### src_v2\gui\OverviewPanel.java\n```java\npackage gui;
+
+import controller.TravelLibrarySystem;
+import model.TravelResource;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class OverviewPanel extends JPanel {
+    private TravelLibrarySystem system;
+    
+    private JLabel lblTotal;
+    private JLabel lblGuides;
+    private JLabel lblMaps;
+    private JLabel lblMagazines;
+    private JPanel recentPanel;
+
+    public OverviewPanel(TravelLibrarySystem system) {
+        this.system = system;
+        setLayout(new BorderLayout(20, 20));
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        JLabel title = new JLabel("System Overview");
+        title.setFont(new Font("SansSerif", Font.BOLD, 24));
+        add(title, BorderLayout.NORTH);
+        
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 20, 20));
+        
+        // Stats Cards
+        JPanel statsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
+        
+        lblTotal = new JLabel("0", SwingConstants.CENTER);
+        lblGuides = new JLabel("0", SwingConstants.CENTER);
+        lblMaps = new JLabel("0", SwingConstants.CENTER);
+        lblMagazines = new JLabel("0", SwingConstants.CENTER);
+        
+        statsPanel.add(createStatCard("Total Resources", lblTotal));
+        statsPanel.add(createStatCard("Travel Guides", lblGuides));
+        statsPanel.add(createStatCard("Travel Maps", lblMaps));
+        statsPanel.add(createStatCard("Magazines", lblMagazines));
+        
+        centerPanel.add(statsPanel);
+        
+        // Recent Access Panel
+        recentPanel = new JPanel();
+        recentPanel.setLayout(new BoxLayout(recentPanel, BoxLayout.Y_AXIS));
+        recentPanel.setBorder(BorderFactory.createTitledBorder("Recently Accessed (Cache)"));
+        
+        centerPanel.add(new JScrollPane(recentPanel));
+        
+        add(centerPanel, BorderLayout.CENTER);
+        
+        refresh();
+    }
+    
+    private JPanel createStatCard(String title, JLabel valueLabel) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(new Color(236, 240, 241));
+        card.setBorder(BorderFactory.createLineBorder(new Color(189, 195, 199), 1));
+        
+        JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
+        lblTitle.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lblTitle.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        
+        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
+        valueLabel.setForeground(new Color(41, 128, 185)); // Blueish
+        
+        card.add(lblTitle, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
+    }
+    
+    public void refresh() {
+        int total = system.getInventory().size();
+        lblTotal.setText(String.valueOf(total));
+        
+        // Using the recursive count requirement!
+        lblGuides.setText(String.valueOf(system.tallyResourcesByCategory("Travel Guide")));
+        lblMaps.setText(String.valueOf(system.tallyResourcesByCategory("Map")));
+        lblMagazines.setText(String.valueOf(system.tallyResourcesByCategory("Magazine")));
+        
+        recentPanel.removeAll();
+        TravelResource[] cache = system.getAccessCache();
+        for (TravelResource res : cache) {
+            if (res != null) {
+                JLabel lbl = new JLabel(res.toString());
+                lbl.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                recentPanel.add(lbl);
+            }
+        }
+        recentPanel.revalidate();
+        recentPanel.repaint();
+    }
+}
+\n```\n\n### src_v2\gui\RentalsPanel.java\n```java\npackage gui;
+
+import controller.TravelLibrarySystem;
+import model.TravelResource;
+import model.Traveler;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class RentalsPanel extends JPanel {
+    
+    private TravelLibrarySystem system;
+    private MainDashboard dashboard;
+    
+    private JComboBox<Traveler> cbTravelers;
+    private DefaultListModel<TravelResource> availableModel;
+    private JList<TravelResource> availableList;
+    private DefaultListModel<TravelResource> rentedModel;
+    private JList<TravelResource> rentedList;
+
+    public RentalsPanel(TravelLibrarySystem system, MainDashboard dashboard) {
+        this.system = system;
+        this.dashboard = dashboard;
+        setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Top: Traveler Selection
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.add(new JLabel("Select Traveler:"));
+        cbTravelers = new JComboBox<>();
+        for (Traveler t : system.getTravelers()) {
+            cbTravelers.addItem(t);
+        }
+        cbTravelers.addActionListener(e -> refreshLists());
+        topPanel.add(cbTravelers);
+        
+        JButton calculateFeeBtn = new JButton("Calculate Late Fee (1 day)");
+        calculateFeeBtn.addActionListener(e -> {
+             double fee = system.computeLateFeesRecursive(1);
+             JOptionPane.showMessageDialog(this, "Late fee for 1 day is: $" + String.format("%.2f", fee));
+        });
+        topPanel.add(calculateFeeBtn);
+        
+        add(topPanel, BorderLayout.NORTH);
+        
+        // Center: Dual lists
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        
+        // Left: Available Resources
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Available Resources"));
+        availableModel = new DefaultListModel<>();
+        availableList = new JList<>(availableModel);
+        leftPanel.add(new JScrollPane(availableList), BorderLayout.CENTER);
+        JButton btnRent = new JButton("Rent Selected ->");
+        btnRent.addActionListener(e -> rentSelected());
+        leftPanel.add(btnRent, BorderLayout.SOUTH);
+        
+        // Right: Rented by Traveler
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBorder(BorderFactory.createTitledBorder("Currently Rented by Traveler"));
+        rentedModel = new DefaultListModel<>();
+        rentedList = new JList<>(rentedModel);
+        rightPanel.add(new JScrollPane(rentedList), BorderLayout.CENTER);
+        JButton btnReturn = new JButton("<- Return Selected");
+        btnReturn.addActionListener(e -> returnSelected());
+        rightPanel.add(btnReturn, BorderLayout.SOUTH);
+        
+        centerPanel.add(leftPanel);
+        centerPanel.add(rightPanel);
+        add(centerPanel, BorderLayout.CENTER);
+        
+        refreshLists();
+    }
+    
+    private void rentSelected() {
+        TravelResource res = availableList.getSelectedValue();
+        Traveler traveler = (Traveler) cbTravelers.getSelectedItem();
+        
+        if (res != null && traveler != null) {
+            if (res.rentItem(traveler.getTravelerId())) {
+                traveler.addRentedItem(res);
+                refreshLists();
+            } else {
+                JOptionPane.showMessageDialog(this, "Item is not available.");
+            }
+        }
+    }
+    
+    private void returnSelected() {
+        TravelResource res = rentedList.getSelectedValue();
+        Traveler traveler = (Traveler) cbTravelers.getSelectedItem();
+        
+        if (res != null && traveler != null) {
+            if (res.returnItem(traveler.getTravelerId())) {
+                traveler.removeRentedItem(res);
+                refreshLists();
+            }
+        }
+    }
+    
+    public void refresh() {
+        // Refresh travelers dropdown just in case
+        cbTravelers.removeAllItems();
+        for (Traveler t : system.getTravelers()) {
+            cbTravelers.addItem(t);
+        }
+        refreshLists();
+    }
+    
+    private void refreshLists() {
+        availableModel.clear();
+        for (TravelResource r : system.getInventory()) {
+            if (r.isAvailable()) {
+                availableModel.addElement(r);
+            }
+        }
+        
+        rentedModel.clear();
+        Traveler traveler = (Traveler) cbTravelers.getSelectedItem();
+        if (traveler != null) {
+            for (TravelResource r : traveler.getRentedItems()) {
+                rentedModel.addElement(r);
+            }
+        }
+    }
+}
+\n```\n\n### src_v2\model\Rentable.java\n```java\npackage model;
+
+/**
+ * Interface defining the rental contract for any travel resource.
+ */
+public interface Rentable {
+    /**
+     * Rents the item to a user.
+     * @param userId The ID of the user renting the item.
+     * @return true if successfully rented, false if not available.
+     */
+    boolean rentItem(String userId);
+
+    /**
+     * Returns the item to the library.
+     * @param userId The ID of the user returning the item.
+     * @return true if successfully returned, false if it was already available.
+     */
+    boolean returnItem(String userId);
+}
+\n```\n\n### src_v2\model\Traveler.java\n```java\npackage model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Traveler {
+    private String travelerId;
+    private String name;
+    private String email;
+    private List<TravelResource> rentedItems;
+
+    public Traveler(String travelerId, String name, String email) {
+        this.travelerId = travelerId;
+        this.name = name;
+        this.email = email;
+        this.rentedItems = new ArrayList<>();
+    }
+
+    public String getTravelerId() { return travelerId; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    
+    public List<TravelResource> getRentedItems() { return rentedItems; }
+    
+    public void addRentedItem(TravelResource resource) {
+        rentedItems.add(resource);
+    }
+    
+    public void removeRentedItem(TravelResource resource) {
+        rentedItems.remove(resource);
+    }
+
+    @Override
+    public String toString() {
+        return name + " (" + email + ")";
+    }
+}
+\n```\n\n### src_v2\model\TravelGuide.java\n```java\npackage model;
+
+public class TravelGuide extends TravelResource {
+    private String country;
+    private String audience;
+
+    public TravelGuide(String id, String title, String creator, int publicationYear, String country, String audience) {
+        super(id, title, creator, publicationYear);
+        this.country = country;
+        this.audience = audience;
+    }
+
+    @Override public String getResourceType() { return "Travel Guide"; }
+    @Override public String getExtraLabel1() { return "Country/Region"; }
+    @Override public String getExtraLabel2() { return "Audience"; }
+    @Override public String getExtraAttribute1() { return country; }
+    @Override public String getExtraAttribute2() { return audience; }
+}
+\n```\n\n### src_v2\model\TravelMagazine.java\n```java\npackage model;
+
+public class TravelMagazine extends TravelResource {
+    private String issueMonth;
+    private String topic;
+
+    public TravelMagazine(String id, String title, String creator, int publicationYear, String issueMonth, String topic) {
+        super(id, title, creator, publicationYear);
+        this.issueMonth = issueMonth;
+        this.topic = topic;
+    }
+
+    @Override public String getResourceType() { return "Magazine"; }
+    @Override public String getExtraLabel1() { return "Issue Month"; }
+    @Override public String getExtraLabel2() { return "Topic"; }
+    @Override public String getExtraAttribute1() { return issueMonth; }
+    @Override public String getExtraAttribute2() { return topic; }
+}
+\n```\n\n### src_v2\model\TravelMap.java\n```java\npackage model;
+
+public class TravelMap extends TravelResource {
+    private String region;
+    private String scale;
+
+    public TravelMap(String id, String title, String creator, int publicationYear, String region, String scale) {
+        super(id, title, creator, publicationYear);
+        this.region = region;
+        this.scale = scale;
+    }
+
+    @Override public String getResourceType() { return "Map"; }
+    @Override public String getExtraLabel1() { return "Region"; }
+    @Override public String getExtraLabel2() { return "Scale"; }
+    @Override public String getExtraAttribute1() { return region; }
+    @Override public String getExtraAttribute2() { return scale; }
+}
+\n```\n\n### src_v2\model\TravelResource.java\n```java\npackage model;
+
+public abstract class TravelResource implements Rentable {
+    private String id;
+    private String title;
+    private String creator;
+    private int publicationYear;
+    private boolean available;
+    private String rentedBy;
+
+    public TravelResource(String id, String title, String creator, int publicationYear) {
+        this.id = id;
+        this.title = title;
+        this.creator = creator;
+        this.publicationYear = publicationYear;
+        this.available = true;
+    }
+
+    public String getId() { return id; }
+    public String getTitle() { return title; }
+    public String getCreator() { return creator; }
+    public int getPublicationYear() { return publicationYear; }
+    public boolean isAvailable() { return available; }
+    
+    public abstract String getResourceType();
+    public abstract String getExtraLabel1();
+    public abstract String getExtraLabel2();
+    public abstract String getExtraAttribute1();
+    public abstract String getExtraAttribute2();
+
+    @Override
+    public boolean rentItem(String userId) {
+        if (!available) return false;
+        available = false;
+        rentedBy = userId;
+        return true;
+    }
+
+    @Override
+    public boolean returnItem(String userId) {
+        if (available) return false;
+        available = true;
+        rentedBy = null;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return getResourceType() + " - " + title + " (" + publicationYear + ")";
+    }
+}
+\n```\n\n### src_v2\utils\IdGenerator.java\n```java\npackage utils;
+
+import java.util.UUID;
+
+/**
+ * Utility for generating unique IDs for travel resources and travelers.
+ */
+public class IdGenerator {
+    
+    public static String generateResourceId() {
+        return "TRV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+    
+    public static String generateTravelerId() {
+        return "USR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+}
+\n```\n
